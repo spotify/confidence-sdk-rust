@@ -158,6 +158,7 @@ impl APIURL for Region {
         match self {
             Region::EU => "https://resolver.eu.confidence.dev".to_string(),
             Region::US => "https://resolver.us.confidence.dev".to_string(),
+            Region::GLOBAL => "https://resolver.confidence.dev".to_string(),
         }
     }
 }

@@ -25,7 +25,7 @@ mod tests {
     async fn setup_provider() -> open_feature::Client {
         let config = APIConfig {
             api_key: "".to_string(),
-            region: crate::Region::US,
+            region: crate::Region::GLOBAL,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 

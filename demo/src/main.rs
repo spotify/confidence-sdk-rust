@@ -6,7 +6,7 @@ use open_feature::{EvaluationContext, OpenFeature};
 async fn main() {
     let api_config = APIConfig {
         api_key: "CLIENT_SECRET".to_string(),
-        region: Region::EU,
+        region: Region::Global,
     };
 
     let provider = ConfidenceProvider::builder()

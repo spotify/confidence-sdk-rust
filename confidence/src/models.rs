@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use typed_builder::TypedBuilder;
 use std::collections::HashMap;
+use typed_builder::TypedBuilder;
 
 #[derive(Debug)]
 pub enum ResolveError {
@@ -21,6 +21,7 @@ pub struct APIConfig {
 pub enum Region {
     US,
     EU,
+    Global,
 }
 
 #[allow(unused_variables)]
@@ -158,6 +159,7 @@ impl APIURL for Region {
         match self {
             Region::EU => "https://resolver.eu.confidence.dev".to_string(),
             Region::US => "https://resolver.us.confidence.dev".to_string(),
+            Region::Global => "https://resolver.confidence.dev".to_string(),
         }
     }
 }

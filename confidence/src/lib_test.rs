@@ -25,7 +25,7 @@ mod tests {
     async fn setup_provider() -> open_feature::Client {
         let config = APIConfig {
             api_key: "".to_string(),
-            region: crate::Region::GLOBAL,
+            region: crate::Region::Global,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 
@@ -103,11 +103,12 @@ mod tests {
             .await
             .unwrap();
 
-
-
         assert_eq!(value.fields["integer-key"], open_feature::Value::Int(40));
         if let open_feature::Value::Struct(struct_value) = value.fields["struct-key"].clone() {
-            assert_eq!(struct_value.fields["integer-key"] , open_feature::Value::Int(23));
+            assert_eq!(
+                struct_value.fields["integer-key"],
+                open_feature::Value::Int(23)
+            );
         } else {
             assert_eq!(1, 0);
         }

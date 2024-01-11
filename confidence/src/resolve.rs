@@ -1,0 +1,113 @@
+use crate::models::APIConfig;
+use crate::models::NetworkResolvedFlags;
+use crate::models::ResolveError;
+use crate::models::ResolveRequest;
+use crate::models::ResolvedFlags;
+use crate::models::APIURL;
+use crate::models::SDK;
+use cargo_metadata::MetadataCommand;
+use async_trait::async_trait;
+use mockall::automock;
+use open_feature::EvaluationContext;
+use serde_json::Value;
+use std::collections::HashMap;
+
+static SDK_ID: &str = "SDK_ID_RUST_PROVIDER";
+
+fn get_sdk_version() -> String {
+    let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let meta = MetadataCommand::new()
+    .manifest_path("./Cargo.toml")
+    .current_dir(&path)
+    .exec()
+    .unwrap();
+
+    let root = meta.root_package().unwrap();
+    let version = &root.version;
+
+    return version.to_string();
+}
+
+#[derive(Clone, Default)]
+pub struct ConfidenceResolver;
+
+impl ConfidenceResolver {
+    async fn make_request(
+        &self,
+        config: &APIConfig,
+        flags: Vec<String>,
+        evaluation_context: &EvaluationContext,
+    ) -> Result<NetworkResolvedFlags, ResolveError> {
+        let mut context = HashMap::new();
+        context.insert(
+            "targeting_key".to_string(),
+            Value::String(evaluation_context.targeting_key.clone().unwrap()),
+        );
+
+        let flags: Vec<String> = flags.into_iter().map(|flag| {
+            let flag_name: Vec<&str> = flag.split(".").collect();
+            format!("flags/{}", flag_name.first().unwrap())
+        }).collect();
+
+        let sdk = SDK::builder().id(SDK_ID).version(get_sdk_version()).build();
+
+        let resolve_request = &ResolveRequest::builder()
+        .client_secret(config.api_key.clone())
+        .evaluation_context(context)
+        .apply(true)
+        .sdk(sdk)
+        .flags(flags)
+        .build();
+
+        let body =
+            serde_json::to_string(resolve_request).unwrap();
+
+        let client = reqwest::Client::new();
+        let response = client
+            .post(format!("{}/v1/flags:resolve", config.region.url()))
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .body(body)
+            .send()
+            .await?;
+
+        match response.text().await {
+            Ok(body) => {
+                let resolved_flags: serde_json::Result<NetworkResolvedFlags> =
+                    serde_json::from_str(&body);
+                match resolved_flags {
+                    Ok(resolved) => Result::Ok(resolved),
+                    Err(err) => {
+                        println!("ERROR ->> {}", err);
+                        Err(ResolveError::SerializationError)
+                    }
+                }
+            }
+            Err(err) => Err(ResolveError::NetworkError(err)),
+        }
+    }
+}
+
+#[async_trait]
+#[automock]
+pub trait NetworkFlagResolver {
+    async fn resolve(
+        &self,
+        config: &APIConfig,
+        flags: Vec<String>,
+        evaluation_context: &EvaluationContext,
+    ) -> Result<ResolvedFlags, ResolveError>;
+}
+
+#[async_trait]
+impl NetworkFlagResolver for ConfidenceResolver {
+    async fn resolve(
+        &self,
+        config: &APIConfig,
+        flags: Vec<String>,
+        evaluation_context: &EvaluationContext,
+    ) -> Result<ResolvedFlags, ResolveError> {
+        let network_response = self.make_request(config, flags, evaluation_context).await?;
+        Ok(network_response.into())
+    }
+}

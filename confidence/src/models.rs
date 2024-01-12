@@ -93,11 +93,11 @@ impl FlagValueConversion<open_feature::StructValue> for Option<Value> {
                                         value.as_str().unwrap_or_default().to_string(),
                                     ),
                                     SchemaType::StructType(struct_value) => {
-                                        open_feature::Value::Struct(Some(value).into_value(
-                                            &Some(FlagSchema {
+                                        open_feature::Value::Struct(Some(value).into_value(&Some(
+                                            FlagSchema {
                                                 schema: *struct_value,
-                                            }),
-                                        ))
+                                            },
+                                        )))
                                     }
                                 };
                                 (key, converted_value)

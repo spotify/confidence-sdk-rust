@@ -1,13 +1,16 @@
 [package]
-name = "demo"
+name = "demo_open_feature"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[dependencies.provider]
+path = "../provider"
 [dependencies.confidence]
 path = "../confidence"
 
 [dependencies]
 tokio = {version = "1.33.0", features = ["full"] }
 async-trait = "0.1.74"
+open-feature = "0.1.2"

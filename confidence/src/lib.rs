@@ -1,33 +1,65 @@
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+
+use typed_builder::TypedBuilder;
+
+use conversion_trait::TypeConversionTrait;
+use details::EvaluationDetails;
+use evaluation_error::EvaluationError;
+
+pub use crate::confidence_value::ConfidenceValue;
+use crate::confidence_value::StructValue;
+use crate::details::EvaluationReason;
+use crate::evaluation_error::EvaluationErrorCode;
+pub use crate::models::APIConfig;
+pub use crate::models::Region;
+use crate::models::ResolvedFlag;
+use crate::models::ResolvedFlags;
+use crate::models::ResolveError;
+pub use crate::resolve::ConfidenceResolver;
+use crate::resolve::NetworkFlagResolver;
+
 mod flag_schema_deserializer;
 mod models;
 mod resolve;
+pub mod confidence_value;
+pub mod evaluation_error;
+pub mod details;
+mod conversion_trait;
+pub mod contextual_confidence;
+pub mod event_sender;
 
-pub use crate::models::Region;
-pub use crate::models::APIConfig;
-use crate::models::ResolvedFlag;
-use typed_builder::TypedBuilder;
-use crate::models::ResolvedFlags;
-use crate::resolve::NetworkFlagResolver;
-pub use crate::resolve::ConfidenceResolver;
-use async_trait::async_trait;
-use models::ResolveError;
-use open_feature::{
-    self, provider::FeatureProvider, provider::ProviderMetadata, provider::ResolutionDetails,
-    EvaluationContext, EvaluationError, StructValue,
-};
+pub static SDK_ID: &str = "SDK_ID_RUST_PROVIDER";
+
+pub fn get_sdk_version() -> String {
+    let version = "&root.version";
+    return version.to_string();
+}
 
 #[derive(TypedBuilder)]
-pub struct ConfidenceProvider {
+pub struct Confidence {
     #[builder(setter(into))]
     api_config: APIConfig,
+    #[builder(default, setter(into))]
+    context: HashMap<String, ConfidenceValue>,
     resolver: Box<dyn NetworkFlagResolver + Sync + Send>
 }
 
-impl<'a> ConfidenceProvider  {
+impl Confidence {
+    pub fn new(api_config: APIConfig) -> Self {
+        let mut map = HashMap::new();
+        map.insert("targeting_key".to_string(), ConfidenceValue::String("Sample".to_string()));
+        Self {
+            api_config,
+            context: map,
+            resolver: Box::new(ConfidenceResolver::default())
+        }
+    }
+
     async fn fetch_resolved_flags(
         &self,
         _flag_key: &str,
-        evaluation_context: &EvaluationContext,
+        evaluation_context: &HashMap<String, ConfidenceValue>,
     ) -> Result<ResolvedFlags, ResolveError> {
         self.resolver
             .resolve(
@@ -40,12 +72,13 @@ impl<'a> ConfidenceProvider  {
     async fn resolve_value(
         &self,
         _flag_key: &str,
-        evaluation_context: &EvaluationContext,
-    ) -> Result<ResolutionDetails<open_feature::Value>, EvaluationError> {
-        let resolved_flags = self
+        evaluation_context: &HashMap<String, ConfidenceValue>,
+    ) -> Result<EvaluationDetails<ConfidenceValue>, EvaluationError> {
+        let resolved_flags_result = self
             .fetch_resolved_flags(_flag_key, evaluation_context)
-            .await
-            .unwrap()
+            .await;
+
+        let resolved_flags = resolved_flags_result.unwrap()
             .flags;
 
         let flag_segments: Vec<&str> = _flag_key.split(".").collect();
@@ -55,7 +88,7 @@ impl<'a> ConfidenceProvider  {
         if resolved_flags.len() == 0 {
             Err(EvaluationError::builder()
                 .message("Could not fetch the flag")
-                .code(open_feature::EvaluationErrorCode::FlagNotFound)
+                .code(EvaluationErrorCode::FlagNotFound)
                 .build())
         } else {
             if resolved_flags[0].flag == flag_name {
@@ -64,7 +97,7 @@ impl<'a> ConfidenceProvider  {
             } else {
                 Err(EvaluationError::builder()
                     .message("The fetched flag name doesn't match")
-                    .code(open_feature::EvaluationErrorCode::FlagNotFound)
+                    .code(EvaluationErrorCode::FlagNotFound)
                     .build())
             }
         }
@@ -74,17 +107,17 @@ impl<'a> ConfidenceProvider  {
         &self,
         resolved_flag: &ResolvedFlag,
         property_path: Vec<&str>,
-    ) -> Result<ResolutionDetails<open_feature::Value>, EvaluationError> {
-        let mut last_struct: &open_feature::StructValue = &resolved_flag.value;
+    ) -> Result<EvaluationDetails<ConfidenceValue>, EvaluationError> {
+        let mut last_struct: &StructValue = &resolved_flag.value;
 
         for path in property_path {
             if let Some(value) = last_struct.fields.get(path) {
-                if let open_feature::Value::Struct(struct_value) = value {
+                if let ConfidenceValue::Struct(struct_value) = value {
                     last_struct = struct_value;
                     continue;
                 } else {
-                    return Ok(ResolutionDetails::builder()
-                        .reason(open_feature::EvaluationReason::TargetingMatch)
+                    return Ok(EvaluationDetails::builder()
+                        .reason(EvaluationReason::TargetingMatch)
                         .variant(resolved_flag.variant.clone())
                         .value(value.clone())
                         .build());
@@ -92,151 +125,42 @@ impl<'a> ConfidenceProvider  {
             } else {
                 return Err(EvaluationError::builder()
                     .message("The fetched flag name doesn't match")
-                    .code(open_feature::EvaluationErrorCode::FlagNotFound)
+                    .code(EvaluationErrorCode::FlagNotFound)
                     .build());
             }
         }
 
-        let value = open_feature::Value::Struct(last_struct.clone());
+        let value = ConfidenceValue::Struct(last_struct.clone());
 
-        return Ok(ResolutionDetails::builder()
-            .reason(open_feature::EvaluationReason::Default)
+        return Ok(EvaluationDetails::builder()
+            .reason(EvaluationReason::Default)
             .variant(resolved_flag.variant.clone())
             .value(value)
             .build());
     }
-}
 
-#[async_trait]
-#[warn(deprecated)]
-#[allow(unused_variables)]
-impl FeatureProvider for ConfidenceProvider {
-    async fn resolve_int_value(
+    pub async fn get_flag<T: TypeConversionTrait>(
         &self,
         _flag_key: &str,
-        evaluation_context: &EvaluationContext,
-    ) -> Result<ResolutionDetails<i64>, EvaluationError> {
+        default_value: T) -> Result<EvaluationDetails<T>, EvaluationError> {
         let value = self
-            .resolve_value(_flag_key, evaluation_context)
+            .resolve_value(_flag_key, &self.context)
             .await
             .unwrap();
 
-        if let Some(int_value) = value.value.as_i64() {
-            Ok(ResolutionDetails::builder()
+        if let Some(int_value) = value.value.as_type(&default_value) {
+            Ok(EvaluationDetails::builder()
             .reason(value.reason.unwrap())
             .variant(value.variant.unwrap())
             .value(int_value)
             .build())
         } else {
             let err = EvaluationError {
-                code: open_feature::EvaluationErrorCode::TypeMismatch,
+                code: EvaluationErrorCode::TypeMismatch,
                 message: Some(format!("schema type is different for {_flag_key}").to_string())
             };
             Err(err)
         }
     }
 
-    async fn resolve_string_value(
-        &self,
-        _flag_key: &str,
-        evaluation_context: &EvaluationContext,
-    ) -> Result<ResolutionDetails<String>, EvaluationError> {
-        let value = self
-            .resolve_value(_flag_key, evaluation_context)
-            .await
-            .unwrap();
-
-        if let Some(string_value) = value.value.as_str() {
-            Ok(ResolutionDetails::builder()
-            .reason(value.reason.unwrap())
-            .variant(value.variant.unwrap())
-            .value(string_value.to_string())
-            .build())
-        } else {
-            let err = EvaluationError {
-                code: open_feature::EvaluationErrorCode::TypeMismatch,
-                message: Some(format!("schema type is different for {_flag_key}").to_string())
-            };
-            Err(err)
-        }
-    }
-
-    async fn resolve_float_value(
-        &self,
-        _flag_key: &str,
-        evaluation_context: &EvaluationContext,
-    ) -> Result<ResolutionDetails<f64>, EvaluationError> {
-        let value = self
-            .resolve_value(_flag_key, evaluation_context)
-            .await
-            .unwrap();
-
-        if let Some(float_value) = value.value.as_f64() {
-            Ok(ResolutionDetails::builder()
-            .reason(value.reason.unwrap())
-            .variant(value.variant.unwrap())
-            .value(float_value)
-            .build())
-        } else {
-            let err = EvaluationError {
-                code: open_feature::EvaluationErrorCode::TypeMismatch,
-                message: Some(format!("schema type is different for {_flag_key}").to_string())
-            };
-            Err(err)
-        }
-    }
-
-    async fn resolve_bool_value(
-        &self,
-        _flag_key: &str,
-        evaluation_context: &EvaluationContext,
-    ) -> Result<ResolutionDetails<bool>, EvaluationError> {
-        let value = self
-            .resolve_value(_flag_key, evaluation_context)
-            .await
-            .unwrap();
-
-        if let Some(bool_value) = value.value.as_bool() {
-            Ok(ResolutionDetails::builder()
-            .reason(value.reason.unwrap())
-            .variant(value.variant.unwrap())
-            .value(value.value.as_bool().unwrap_or_default())
-            .build())
-        } else {
-            let err = EvaluationError {
-                code: open_feature::EvaluationErrorCode::TypeMismatch,
-                message: Some(format!("schema type is different for {_flag_key}").to_string())
-            };
-            Err(err)
-        }
-    }
-
-    async fn resolve_struct_value(
-        &self,
-        _flag_key: &str,
-        evaluation_context: &EvaluationContext,
-    ) -> Result<ResolutionDetails<StructValue>, EvaluationError> {
-        let value = self
-            .resolve_value(_flag_key, evaluation_context)
-            .await
-            .unwrap();
-
-        if let Some(struct_value) = value.value.as_struct() {
-            Ok(ResolutionDetails::builder()
-            .reason(value.reason.unwrap())
-            .variant(value.variant.unwrap())
-            .value(struct_value.clone())
-            .build())
-        } else {
-            let err = EvaluationError {
-                code: open_feature::EvaluationErrorCode::TypeMismatch,
-                message: Some(format!("schema type is different for {_flag_key}").to_string())
-            };
-            Err(err)
-        }
-    }
-
-    fn metadata(&self) -> &ProviderMetadata {
-        todo!()
-    }
 }

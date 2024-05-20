@@ -1,39 +1,28 @@
-use confidence::{APIConfig, ConfidenceProvider, ConfidenceResolver, Region};
-use open_feature::{EvaluationContext, OpenFeature};
+use std::collections::HashMap;
+
+use confidence::{APIConfig, Confidence, ConfidenceValue, Region};
+use confidence::contextual_confidence::Contextual;
+use confidence::event_sender::EventSender;
 
 #[tokio::main]
 #[warn(unused_must_use)]
 async fn main() {
-    let api_config = APIConfig {
-        api_key: "CLIENT_SECRET".to_string(),
+let api_config = APIConfig {
+        api_key: "API_KEY".to_string(),
         region: Region::Global,
     };
+    let mut context = HashMap::new();
+    context.insert("targeting_key".to_string(), ConfidenceValue::String("Sample".to_string()));
 
-    let provider = ConfidenceProvider::builder()
-        .api_config(api_config)
-        .resolver(Box::new(ConfidenceResolver::default()))
-        .build();
-
-    let context = EvaluationContext::builder()
-        .targeting_key("TARGETING_KEY")
-        .build();
-
-    let mut api = OpenFeature::singleton_mut().await;
-
-    api.set_provider(provider).await;
+    let confidence = Confidence::new(api_config).with_context(context);
 
     // wrong type, should return error
-    let details_string = api
-        .create_client()
-        .get_bool_details("FLAG.string_key", Some(&context), None)
-        .await;
+    let details_string = confidence.get_flag("hawkflag.message", "default".to_string()).await;
 
-    // correct type, should return value
-    let details_boolean = api
-        .create_client()
-        .get_bool_details("FLAG.struct_key", Some(&context), None)
-        .await;
+    println!("details string -> {:?}", details_string.unwrap().value);
 
-    println!("details string -> {:?}", details_string);
-    println!("details boolean -> {:?}", details_boolean.unwrap().value);
+    // send 10 track events and wait 10 seconds
+    for i in 0..10 {
+        confidence.track("navigate", HashMap::new());
+    }
 }

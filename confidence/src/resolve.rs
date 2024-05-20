@@ -1,32 +1,18 @@
-use crate::models::APIConfig;
-use crate::models::NetworkResolvedFlags;
-use crate::models::ResolveError;
-use crate::models::ResolveRequest;
-use crate::models::ResolvedFlags;
-use crate::models::APIURL;
-use crate::models::SDK;
-use cargo_metadata::MetadataCommand;
-use async_trait::async_trait;
-use mockall::automock;
-use open_feature::EvaluationContext;
-use serde_json::Value;
 use std::collections::HashMap;
 
-static SDK_ID: &str = "SDK_ID_RUST_PROVIDER";
+use async_trait::async_trait;
+use mockall::automock;
+use serde_json::Value;
 
-fn get_sdk_version() -> String {
-    let path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let meta = MetadataCommand::new()
-    .manifest_path("./Cargo.toml")
-    .current_dir(&path)
-    .exec()
-    .unwrap();
-
-    let root = meta.root_package().unwrap();
-    let version = &root.version;
-
-    return version.to_string();
-}
+use crate::confidence_value::ConfidenceValue;
+use crate::models::APIConfig;
+use crate::models::APIURL;
+use crate::models::NetworkResolvedFlags;
+use crate::models::ResolvedFlags;
+use crate::models::ResolveError;
+use crate::models::ResolveRequest;
+use crate::models::SDK;
+use crate::{get_sdk_version, SDK_ID};
 
 #[derive(Clone, Default)]
 pub struct ConfidenceResolver;
@@ -36,13 +22,10 @@ impl ConfidenceResolver {
         &self,
         config: &APIConfig,
         flags: Vec<String>,
-        evaluation_context: &EvaluationContext,
+        _evaluation_context: &HashMap<String, ConfidenceValue>,
     ) -> Result<NetworkResolvedFlags, ResolveError> {
         let mut context = HashMap::new();
-        context.insert(
-            "targeting_key".to_string(),
-            Value::String(evaluation_context.targeting_key.clone().unwrap()),
-        );
+        context.insert("targeting_key".to_string(), Value::String("sample".to_string()));
 
         let flags: Vec<String> = flags.into_iter().map(|flag| {
             let flag_name: Vec<&str> = flag.split(".").collect();
@@ -95,7 +78,7 @@ pub trait NetworkFlagResolver {
         &self,
         config: &APIConfig,
         flags: Vec<String>,
-        evaluation_context: &EvaluationContext,
+        evaluation_context: &HashMap<String, ConfidenceValue>,
     ) -> Result<ResolvedFlags, ResolveError>;
 }
 
@@ -105,7 +88,7 @@ impl NetworkFlagResolver for ConfidenceResolver {
         &self,
         config: &APIConfig,
         flags: Vec<String>,
-        evaluation_context: &EvaluationContext,
+        evaluation_context: &HashMap<String, ConfidenceValue>,
     ) -> Result<ResolvedFlags, ResolveError> {
         let network_response = self.make_request(config, flags, evaluation_context).await?;
         Ok(network_response.into())

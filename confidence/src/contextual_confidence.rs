@@ -20,13 +20,6 @@ impl Contextual for Confidence {
             context.insert(key.to_string(), value.clone());
         }
 
-        if let Some(parent_context) = &self.parent_context {
-            let parent_context = parent_context.read().unwrap();
-            for (key, value) in parent_context.iter() {
-                context.insert(key.to_string(), value.clone());
-            }
-        }
-
         Arc::new(RwLock::new(context))
     }
 

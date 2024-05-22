@@ -9,6 +9,7 @@ use crate::conversion_traits::{ConvertContext, ResolutionDetailsConverter};
 use crate::conversion_traits::ToValueConverter;
 
 pub mod conversion_traits;
+mod lib_test;
 
 #[derive(TypedBuilder)]
 pub struct ConfidenceProvider {
@@ -19,7 +20,7 @@ pub struct ConfidenceProvider {
 impl ConfidenceProvider {
     pub fn new(confidence: Confidence) -> Self {
         Self {
-            metadata: ProviderMetadata::builder().name("ConfidenceProvider").build(),
+            metadata: ProviderMetadata{ name: "ConfidenceProvider".to_string() },
             confidence
         }
     }

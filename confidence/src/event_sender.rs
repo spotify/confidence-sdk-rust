@@ -16,8 +16,7 @@ pub trait EventSender {
 
 impl EventSender for Confidence {
     fn track(&self, name: &str, message: HashMap<String, ConfidenceValue>) {
-        let binding = self.get_context();
-        let payload = &binding.read().unwrap();
+        let payload = self.get_context();
 
         let mut context_map: HashMap<String, Value> = payload
             .iter()

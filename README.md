@@ -14,7 +14,7 @@ let api_config = APIConfig { api_key: "YOUR_CLIENT_SECRET".to_string(), region: 
 
 let provider = ConfidenceProvider::builder()
 .api_config(api_config)
-.resolver(Box::new(ConfidenceResolver::default()))
+.resolver(Arc::new(ConfidenceResolver::default()))
 .build();
 ```
 

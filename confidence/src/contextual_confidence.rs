@@ -1,11 +1,11 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use crate::{APIConfig, Confidence, ConfidenceResolver, ConfidenceValue};
 
 pub trait Contextual {
     fn put_context(&mut self, key: &str, value: ConfidenceValue);
-    fn get_context(&self) -> Arc<RwLock<HashMap<String, ConfidenceValue>>>;
+    fn get_context(&self) -> HashMap<String, ConfidenceValue>;
     fn with_context(&self, context: HashMap<String, ConfidenceValue>) -> Confidence;
 }
 
@@ -14,13 +14,13 @@ impl Contextual for Confidence {
         self.context.insert(key.to_string(), value);
     }
 
-    fn get_context(&self) -> Arc<RwLock<HashMap<String, ConfidenceValue>>> {
+    fn get_context(&self) -> HashMap<String, ConfidenceValue> {
         let mut context = HashMap::new();
         for (key, value) in self.context.iter() {
             context.insert(key.to_string(), value.clone());
         }
 
-        Arc::new(RwLock::new(context))
+        context
     }
 
     fn with_context(&self, context: HashMap<String, ConfidenceValue>) -> Confidence {
@@ -35,8 +35,8 @@ impl Contextual for Confidence {
                 api_key: api_config.api_key,
                 region: api_config.region
             })
-            .resolver(Box::new(ConfidenceResolver::default()))
             .context(new_context)
+            .resolver(Arc::clone(&self.resolver))
             .build()
     }
 }
@@ -45,14 +45,16 @@ impl Contextual for Confidence {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::sync::Arc;
 
-    use crate::{APIConfig, Confidence, ConfidenceValue, Contextual, Region};
+    use crate::{APIConfig, Confidence, ConfidenceValue, Region};
+    use crate::contextual_confidence::Contextual;
 
     #[test]
     fn test_put_context() {
         let mut confidence = Confidence::builder()
             .api_config(APIConfig { api_key: "".to_string(), region: Region::EU })
-            .resolver(Box::new(crate::ConfidenceResolver::default()))
+            .resolver(Arc::new(crate::ConfidenceResolver::default()))
             .build();
         confidence.put_context("key", ConfidenceValue::Int(1));
         assert_eq!(confidence.context.get("key"), Some(&ConfidenceValue::Int(1)));
@@ -62,7 +64,7 @@ mod tests {
     fn test_with_context() {
         let mut confidence = Confidence::builder()
             .api_config(APIConfig { api_key: "X".to_string(), region: Region::EU })
-            .resolver(Box::new(crate::ConfidenceResolver::default()))
+            .resolver(Arc::new(crate::ConfidenceResolver::default()))
             .build();
 
         let mut context = HashMap::new();

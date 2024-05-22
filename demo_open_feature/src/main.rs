@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use open_feature::{EvaluationContext, OpenFeature};
 
 use confidence::{APIConfig, Confidence, Region};
@@ -13,9 +14,10 @@ let api_config = APIConfig {
     let confidence = Confidence::new(api_config);
     let provider = ConfidenceProvider::new(confidence);
 
-    let context = EvaluationContext::builder()
-        .targeting_key("TARGETING_KEY")
-        .build();
+    let context = EvaluationContext {
+        targeting_key: Some("TARGETING_KEY".to_string()),
+        custom_fields: HashMap::new()
+    };
 
     let mut api = OpenFeature::singleton_mut().await;
 

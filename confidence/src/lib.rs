@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use typed_builder::TypedBuilder;
 
@@ -19,8 +20,8 @@ pub use crate::resolve::ConfidenceResolver;
 use crate::resolve::NetworkFlagResolver;
 
 mod flag_schema_deserializer;
-mod models;
-mod resolve;
+pub mod models;
+pub mod resolve;
 pub mod confidence_value;
 pub mod evaluation_error;
 pub mod details;
@@ -41,7 +42,7 @@ pub struct Confidence {
     api_config: APIConfig,
     #[builder(default, setter(into))]
     context: HashMap<String, ConfidenceValue>,
-    resolver: Box<dyn NetworkFlagResolver + Sync + Send>
+    resolver: Arc<dyn NetworkFlagResolver + Sync + Send>
 }
 
 impl Confidence {
@@ -51,7 +52,7 @@ impl Confidence {
         Self {
             api_config,
             context: map,
-            resolver: Box::new(ConfidenceResolver::default())
+            resolver: Arc::new(ConfidenceResolver::default())
         }
     }
 

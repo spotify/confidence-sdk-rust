@@ -1,40 +1,51 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::sync::Arc;
 
-    use open_feature::{EvaluationContext, FromStructValue, OpenFeature, StructValue};
+    use serde_json;
+    use open_feature::{EvaluationContext, OpenFeature, StructValue};
+    use open_feature::provider::ProviderMetadata;
+    use confidence::{APIConfig, Confidence, Region};
 
     struct MyStructValue {
         fields: HashMap<String, open_feature::Value>,
     }
 
-    impl FromStructValue for MyStructValue {
-        fn from_struct_value(value: &StructValue) -> anyhow::Result<Self> {
-            return Ok(MyStructValue {
+    impl From<StructValue> for MyStructValue {
+        fn from(value: StructValue) -> Self {
+            return MyStructValue {
                 fields: value.fields.clone(),
-            });
+            };
         }
     }
 
-    use crate::{
+    use confidence::{
         models::{NetworkResolvedFlags, ResolveError, ResolvedFlags},
-        resolve::MockNetworkFlagResolver,
-        APIConfig, ConfidenceProvider,
+        resolve::MockNetworkFlagResolver
     };
+    use crate::ConfidenceProvider;
 
     async fn setup_provider() -> open_feature::Client {
-        let config = APIConfig {
+        let api_config = APIConfig {
             api_key: "".to_string(),
-            region: crate::Region::Global,
+            region: Region::Global,
         };
-        let mut mock_resolver = MockNetworkFlagResolver::new();
 
+        let mut mock_resolver = MockNetworkFlagResolver::new();
         mock_resolver.expect_resolve().returning(|_, _, _| {
             Box::pin(async move { resolve_response("test-flag".to_string()) })
         });
-        let provider = ConfidenceProvider::builder()
-            .api_config(config)
+
+        let confidence = Confidence::builder()
+            .api_config(api_config)
             .resolver(Arc::new(mock_resolver))
+            .build();
+
+
+        let provider = ConfidenceProvider::builder()
+            .confidence(confidence)
+            .metadata(ProviderMetadata::default())
             .build();
 
         let mut api = OpenFeature::singleton_mut().await;
@@ -45,9 +56,10 @@ mod tests {
 
     #[tokio::test]
     async fn resovle_boolean_value() {
-        let context = EvaluationContext::builder()
-            .targeting_key("3poj234lknwfklnasflkaflakjlkejelkfjlkj")
-            .build();
+        let context = EvaluationContext {
+            targeting_key: Some("3poj234lknwfklnasflkaflakjlkejelkfjlkj".to_string()),
+            custom_fields: HashMap::new()
+        };
 
         let client = setup_provider().await;
 
@@ -60,9 +72,10 @@ mod tests {
 
     #[tokio::test]
     async fn resovle_nested_boolean_value() {
-        let context = EvaluationContext::builder()
-            .targeting_key("3poj234lknwfklnasflkaflakjlkejelkfjlkj")
-            .build();
+        let context = EvaluationContext {
+            targeting_key: Some("3poj234lknwfklnasflkaflakjlkejelkfjlkj".to_string()),
+            custom_fields: HashMap::new()
+        };
 
         let client = setup_provider().await;
 
@@ -76,9 +89,10 @@ mod tests {
 
     #[tokio::test]
     async fn resolve_whole_object() {
-        let context = EvaluationContext::builder()
-            .targeting_key("3poj234lknwfklnasflkaflakjlkejelkfjlkj")
-            .build();
+        let context = EvaluationContext {
+            targeting_key: Some("3poj234lknwfklnasflkaflakjlkejelkfjlkj".to_string()),
+            custom_fields: HashMap::new()
+        };
 
         let client = setup_provider().await;
 
@@ -92,9 +106,10 @@ mod tests {
 
     #[tokio::test]
     async fn resolve_whole_object_ints() {
-        let context = EvaluationContext::builder()
-            .targeting_key("3poj234lknwfklnasflkaflakjlkejelkfjlkj")
-            .build();
+        let context = EvaluationContext {
+            targeting_key: Some("3poj234lknwfklnasflkaflakjlkejelkfjlkj".to_string()),
+            custom_fields: HashMap::new()
+        };
 
         let client = setup_provider().await;
 
@@ -116,9 +131,10 @@ mod tests {
 
     #[tokio::test]
     async fn resovle_double_nested_boolean_value() {
-        let context = EvaluationContext::builder()
-            .targeting_key("3poj234lknwfklnasflkaflakjlkejelkfjlkj")
-            .build();
+        let context = EvaluationContext {
+            targeting_key: Some("3poj234lknwfklnasflkaflakjlkejelkfjlkj".to_string()),
+            custom_fields: HashMap::new()
+        };
 
         let client = setup_provider().await;
 
@@ -204,8 +220,8 @@ mod tests {
  "resolveToken": ""
 }
         "#
-        .to_string()
-        .replace("{flag}", flag.as_ref());
+            .to_string()
+            .replace("{flag}", flag.as_ref());
 
         let network_flags: NetworkResolvedFlags = serde_json::from_str(&json_data).unwrap();
         return Ok(network_flags.into());

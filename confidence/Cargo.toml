@@ -10,18 +10,20 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[profile.release]
+debug = false
+strip = true
+opt-level = 'z'
+codegen-units = 1
+lto = true
+panic = 'abort'
+
 [dependencies]
-anyhow = "1.0"
-futures = "0.3"
-reqwest = "0.11"
-tokio = {version = "1.33.0", features = ["full"] }
-open-feature = "0.1.2"
+chrono = {version = "0.4", features = ["serde"]}
+reqwest = "0.12.4"
+tokio = "1.33.0"
 async-trait = "0.1.74"
-lazy_static = "1.4.0"
-time = "0.3.30"
-typed-builder = "0.16.2"
+typed-builder = "0.18.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-uuid = "1.5.0"
-cargo_metadata = "0.18.1"
 mockall = "0.12.0"

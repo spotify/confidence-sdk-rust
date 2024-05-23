@@ -1,0 +1,9 @@
+namespace shared {
+
+};
+
+interface Confidence {
+    constructor();
+    [Async]
+    string get_flag_string(string flag_key, string default_value);
+};

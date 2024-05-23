@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::confidence_value::StructValue;
+use crate::confidence_value::ConfidenceValue;
 use typed_builder::TypedBuilder;
 
 #[derive(Debug)]
@@ -61,7 +63,7 @@ pub struct ResolvedFlags {
 pub struct ResolvedFlag {
     pub flag: String,
     pub variant: String,
-    pub value: open_feature::StructValue,
+    pub value: StructValue,
     pub reason: String,
 }
 
@@ -69,31 +71,31 @@ trait FlagValueConversion<T> {
     fn into_value(self, schema: &Option<FlagSchema>) -> T;
 }
 
-impl FlagValueConversion<open_feature::StructValue> for Option<Value> {
-    fn into_value(self, schema: &Option<FlagSchema>) -> open_feature::StructValue {
+impl FlagValueConversion<StructValue> for Option<Value> {
+    fn into_value(self, schema: &Option<FlagSchema>) -> StructValue {
         if let Some(schema) = schema {
             let schema = &schema.schema;
             match self {
                 Some(value) => {
                     if let Value::Object(value_map) = value {
-                        let new_map: HashMap<String, open_feature::Value> = value_map
+                        let new_map: HashMap<String, ConfidenceValue> = value_map
                             .into_iter()
                             .map(|(key, value)| {
                                 let converted_value = match schema[&key].clone() {
-                                    SchemaType::BoolType => open_feature::Value::Bool(
+                                    SchemaType::BoolType => ConfidenceValue::Bool(
                                         value.as_bool().unwrap_or_default(),
                                     ),
                                     SchemaType::IntType => {
-                                        open_feature::Value::Int(value.as_i64().unwrap_or_default())
+                                        ConfidenceValue::Int(value.as_i64().unwrap_or_default())
                                     }
-                                    SchemaType::DoubleType => open_feature::Value::Float(
+                                    SchemaType::DoubleType => ConfidenceValue::Float(
                                         value.as_f64().unwrap_or_default(),
                                     ),
-                                    SchemaType::StringType => open_feature::Value::String(
+                                    SchemaType::StringType => ConfidenceValue::String(
                                         value.as_str().unwrap_or_default().to_string(),
                                     ),
                                     SchemaType::StructType(struct_value) => {
-                                        open_feature::Value::Struct(Some(value).into_value(&Some(
+                                        ConfidenceValue::Struct(Some(value).into_value(&Some(
                                             FlagSchema {
                                                 schema: *struct_value,
                                             },
@@ -103,15 +105,15 @@ impl FlagValueConversion<open_feature::StructValue> for Option<Value> {
                                 (key, converted_value)
                             })
                             .collect();
-                        open_feature::StructValue { fields: new_map }
+                        StructValue { fields: new_map }
                     } else {
-                        open_feature::StructValue::default()
+                        StructValue::default()
                     }
                 }
-                None => open_feature::StructValue::default(),
+                None => StructValue::default(),
             }
         } else {
-            open_feature::StructValue::default()
+            StructValue::default()
         }
     }
 }

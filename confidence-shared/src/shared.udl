@@ -1,9 +1,33 @@
 namespace shared {
+};
 
+
+[Enum]
+interface ConfidenceValue{
+    Bool(boolean value);
+    Int(i64 value);
+    String(string value);
+    Float(double value);
+    List(sequence<ConfidenceValue> value);
+    Struct(record<string, ConfidenceValue> value);
+};
+
+dictionary APIConfig {
+    string api_key;
+    Region region;
+};
+
+enum Region {
+    "US",
+    "EU",
+    "Global",
 };
 
 interface Confidence {
-    constructor();
+    constructor(APIConfig api_config);
     [Async]
     string get_flag_string(string flag_key, string default_value);
+    void put_context(string key, ConfidenceValue value);
+    Confidence with_context(record<string, ConfidenceValue> context);
+    void track(string event_name, record<string, ConfidenceValue> message);
 };

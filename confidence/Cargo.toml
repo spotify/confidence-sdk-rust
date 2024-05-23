@@ -10,6 +10,9 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[package.metadata.maturin]
+bindings = ["uniffi"]
+
 [profile.release]
 debug = false
 strip = true

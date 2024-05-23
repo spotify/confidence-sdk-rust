@@ -32,14 +32,14 @@ pub mod event_sender;
 pub static SDK_ID: &str = "SDK_ID_RUST_PROVIDER";
 
 pub fn get_sdk_version() -> String {
-    let version = "&root.version";
+    let version = "0.1.0";
     return version.to_string();
 }
 
 #[derive(TypedBuilder)]
 pub struct Confidence {
     #[builder(setter(into))]
-    api_config: APIConfig,
+    pub api_config: APIConfig,
     #[builder(default, setter(into))]
     context: HashMap<String, ConfidenceValue>,
     resolver: Arc<dyn NetworkFlagResolver + Sync + Send>

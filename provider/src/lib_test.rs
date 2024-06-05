@@ -6,7 +6,7 @@ mod tests {
     use serde_json;
     use open_feature::{EvaluationContext, OpenFeature, StructValue};
     use open_feature::provider::ProviderMetadata;
-    use confidence::{APIConfig, Confidence, Region};
+    use spotify_confidence_sdk::{APIConfig, Confidence, Region};
 
     struct MyStructValue {
         fields: HashMap<String, open_feature::Value>,
@@ -20,7 +20,7 @@ mod tests {
         }
     }
 
-    use confidence::{
+    use spotify_confidence_sdk::{
         models::{NetworkResolvedFlags, ResolveError, ResolvedFlags},
         resolve::MockNetworkFlagResolver
     };

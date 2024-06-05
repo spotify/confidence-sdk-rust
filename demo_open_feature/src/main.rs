@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use open_feature::{EvaluationContext, OpenFeature};
 
-use confidence::{APIConfig, Confidence, Region};
-use provider::ConfidenceProvider;
+use spotify_confidence_sdk::{APIConfig, Confidence, Region};
+use spotify_confidence_openfeature_provider::ConfidenceProvider;
 
 #[tokio::main]
 #[warn(unused_must_use)]

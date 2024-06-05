@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use open_feature::{self, EvaluationContext, EvaluationError, provider::FeatureProvider, provider::ProviderMetadata, provider::ResolutionDetails, StructValue};
 use typed_builder::TypedBuilder;
 
-use confidence::{Confidence, contextual_confidence::Contextual};
-pub use confidence::confidence_value::StructValue as ConfidenceStructValue;
+use spotify_confidence_sdk::{Confidence, contextual_confidence::Contextual};
+pub use spotify_confidence_sdk::confidence_value::StructValue as ConfidenceStructValue;
 
 use crate::conversion_traits::{ConvertContext, ResolutionDetailsConverter};
 use crate::conversion_traits::ToValueConverter;

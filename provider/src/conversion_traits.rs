@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use confidence::details::EvaluationDetails as ConfidenceEvaluationDetails;
-use confidence::evaluation_error::EvaluationError as ConfidenceError;
+use spotify_confidence_sdk::details::EvaluationDetails as ConfidenceEvaluationDetails;
+use spotify_confidence_sdk::evaluation_error::EvaluationError as ConfidenceError;
 use open_feature::{self, EvaluationContext, EvaluationContextFieldValue, EvaluationError, EvaluationErrorCode, FlagMetadata, FlagMetadataValue, StructValue, Value};
 use open_feature::provider::ResolutionDetails;
+use spotify_confidence_sdk::ConfidenceValue;
 
-pub use confidence::confidence_value::StructValue as ConfidenceStructValue;
-use confidence::ConfidenceValue;
-use confidence::details::{EvaluationReason as ConfidenceReason, EvaluationReason};
-use confidence::evaluation_error::EvaluationErrorCode as ConfidenceErrorCode;
+pub use spotify_confidence_sdk::confidence_value::StructValue as ConfidenceStructValue;
+use spotify_confidence_sdk::details::{EvaluationReason as ConfidenceReason, EvaluationReason};
+use spotify_confidence_sdk::evaluation_error::EvaluationErrorCode as ConfidenceErrorCode;
 
 pub trait ToValueConverter {
     fn convert(self) -> StructValue;
@@ -182,7 +182,7 @@ pub trait FlagMetadataConverter {
     fn convert(self) -> Option<FlagMetadata>;
 }
 
-impl FlagMetadataConverter for Option<confidence::details::FlagMetadata> {
+impl FlagMetadataConverter for Option<spotify_confidence_sdk::details::FlagMetadata> {
     fn convert(self) -> Option<FlagMetadata> {
         self.and_then(|metadata| {
             let field_values = metadata.values.iter().map(|(key, field_value)| (key.clone(), field_value.clone().convert())).collect();
@@ -234,19 +234,19 @@ pub trait FlagValueConverter {
     fn convert(self) -> FlagMetadataValue;
 }
 
-impl FlagValueConverter for confidence::details::FlagMetadataValue {
+impl FlagValueConverter for spotify_confidence_sdk::details::FlagMetadataValue {
     fn convert(self) -> FlagMetadataValue {
         match self {
-            confidence::details::FlagMetadataValue::Bool(value) => {
+            spotify_confidence_sdk::details::FlagMetadataValue::Bool(value) => {
                 FlagMetadataValue::Bool(value)
             }
-            confidence::details::FlagMetadataValue::Int(value) => {
+            spotify_confidence_sdk::details::FlagMetadataValue::Int(value) => {
                 FlagMetadataValue::Int(value)
             }
-            confidence::details::FlagMetadataValue::Float(value) => {
+            spotify_confidence_sdk::details::FlagMetadataValue::Float(value) => {
                 FlagMetadataValue::Float(value)
             }
-            confidence::details::FlagMetadataValue::String(value) => {
+            spotify_confidence_sdk::details::FlagMetadataValue::String(value) => {
                 FlagMetadataValue::String(value)
             }
         }

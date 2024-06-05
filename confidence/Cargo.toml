@@ -1,7 +1,7 @@
 [package]
-name = "confidence"
+name = "spotify_confidence_sdk"
 # x-release-please-start-version
-version = "0.1.0"
+version = "0.1.1"
 # x-release-please-end
 edition = "2021"
 description = "Confidence SDK for Rust"
@@ -10,8 +10,7 @@ license-file = "../LICENSE"
 repository = "https://github.com/spotify/confidence-sdk-rust"
 readme = "../README.md"
 homepage = "https://confidence.spotify.com/"
-keywords = ["experimentation", "ab testing", "confidence", "feature flagging", "spotify"]
-categories = ["experimentation"]
+keywords = ["experimentation", "confidence", "spotify", "ab_testing", "feature_flagging"]
 include = ["src/**/*", "Cargo.toml", "../README.md", "../LICENSE"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

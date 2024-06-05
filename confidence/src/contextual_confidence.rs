@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::{APIConfig, Confidence, ConfidenceResolver, ConfidenceValue};
+use crate::{APIConfig, Confidence, ConfidenceValue};
 
 pub trait Contextual {
     fn put_context(&mut self, key: &str, value: ConfidenceValue);

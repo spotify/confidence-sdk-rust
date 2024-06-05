@@ -1,6 +1,12 @@
-on: [push, pull_request]
+name: CI
 
-name: Check Confidence
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
 
 jobs: 
   check: 

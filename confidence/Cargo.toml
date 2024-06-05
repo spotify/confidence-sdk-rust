@@ -4,6 +4,15 @@ name = "confidence"
 version = "0.1.0"
 # x-release-please-end
 edition = "2021"
+description = "Confidence SDK for Rust"
+license = "Apache-2.0"
+license-file = "../LICENSE"
+repository = "https://github.com/spotify/confidence-sdk-rust"
+readme = "../README.md"
+homepage = "https://confidence.spotify.com/"
+keywords = ["experimentation", "ab testing", "confidence", "feature flagging", "spotify"]
+categories = ["experimentation"]
+include = ["src/**/*", "Cargo.toml", "../README.md", "../LICENSE"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

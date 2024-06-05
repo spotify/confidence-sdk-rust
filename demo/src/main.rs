@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use confidence::{APIConfig, Confidence, ConfidenceValue, Region};
-use confidence::contextual_confidence::Contextual;
-use confidence::event_sender::EventSender;
+use spotify_confidence_sdk::{APIConfig, Confidence, ConfidenceValue, Region};
+use spotify_confidence_sdk::contextual_confidence::Contextual;
+use spotify_confidence_sdk::event_sender::EventSender;
 
 #[tokio::main]
 #[warn(unused_must_use)]

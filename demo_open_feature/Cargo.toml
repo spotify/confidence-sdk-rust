@@ -5,9 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies.provider]
+[dependencies.spotify_confidence_openfeature_provider]
 path = "../provider"
-[dependencies.confidence]
+[dependencies.spotify_confidence_sdk]
 path = "../confidence"
 
 [dependencies]

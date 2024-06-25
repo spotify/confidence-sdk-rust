@@ -29,7 +29,7 @@ mod conversion_trait;
 pub mod contextual_confidence;
 pub mod event_sender;
 
-pub static SDK_ID: &str = "SDK_ID_RUST_PROVIDER";
+pub static SDK_ID: &str = "SDK_ID_RUST_CONFIDENCE";
 
 pub fn get_sdk_version() -> String {
     let version = "&root.version";

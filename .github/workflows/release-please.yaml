@@ -29,3 +29,24 @@ jobs:
       # Version doesn't include `v` as a prefix. This is undocumented
             version: ${{ steps.release.outputs['confidence--version'] }}
             upload_url: ${{ steps.release.outputs['confidence--upload_url'] }}
+
+    rust-release:
+        name: Publish (crates.io)
+        needs: release-please
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+          - uses: actions/checkout@v4
+          - uses: dtolnay/rust-toolchain@stable
+
+          - name: cargo login
+            run: cargo login ${{ secrets.PUBLISH_CRATE_TOKEN }}
+          - name: "cargo release publish confidence"
+            working-directory: confidence
+            run: |-
+              cargo publish --dry-run
+
+          - name: "cargo release publish openfeature provider"
+            working-directory: provider
+            run: |-
+              cargo publish --dry-run

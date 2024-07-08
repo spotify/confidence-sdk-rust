@@ -29,6 +29,19 @@ jobs:
       - name: Run cargo check for demo
         run: cd demo && cargo check
 
+      - name: cargo login
+        run: cargo login ${{ secrets.PUBLISH_CRATE_TOKEN }}
+      - name: "cargo release publish confidence"
+        working-directory: confidence
+        run: |-
+          cargo publish --dry-run
+
+      - name: "cargo release publish openfeature provider"
+        working-directory: provider
+        run: |-
+          cargo publish --dry-run
+
+
   test: 
     name: Test Suite
     runs-on: ubuntu-latest

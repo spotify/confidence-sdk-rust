@@ -50,9 +50,9 @@ jobs:
           - name: "cargo release publish confidence"
             working-directory: confidence
             run: |-
-              cargo publish --dry-run
+              cargo publish
 
           - name: "cargo release publish openfeature provider"
             working-directory: provider
             run: |-
-              cargo publish --dry-run
+              cargo publish

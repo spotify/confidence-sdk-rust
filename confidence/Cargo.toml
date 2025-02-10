@@ -1,7 +1,7 @@
 [package]
 name = "spotify_confidence_sdk"
 # x-release-please-start-version
-version = "0.1.2"
+version = "0.1.3"
 # x-release-please-end
 edition = "2021"
 description = "Confidence SDK for Rust"

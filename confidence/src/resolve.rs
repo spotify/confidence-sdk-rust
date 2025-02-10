@@ -3,34 +3,37 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use mockall::automock;
 use serde_json::Value;
-
 use crate::confidence_value::ConfidenceValue;
 use crate::models::APIConfig;
-use crate::models::APIURL;
 use crate::models::NetworkResolvedFlags;
-use crate::models::ResolvedFlags;
 use crate::models::ResolveError;
 use crate::models::ResolveRequest;
+use crate::models::ResolvedFlags;
+use crate::models::APIURL;
 use crate::models::SDK;
 use crate::{get_sdk_version, SDK_ID};
+use crate::conversion_trait::ToSerdeValueConverter;
 
 #[derive(Clone, Default)]
 pub struct ConfidenceResolver;
 
 impl ConfidenceResolver {
+
     async fn make_request(
         &self,
         config: &APIConfig,
         flags: Vec<String>,
         _evaluation_context: &HashMap<String, ConfidenceValue>,
     ) -> Result<NetworkResolvedFlags, ResolveError> {
-        let mut context = HashMap::new();
-        context.insert("targeting_key".to_string(), Value::String("sample".to_string()));
-
         let flags: Vec<String> = flags.into_iter().map(|flag| {
             let flag_name: Vec<&str> = flag.split(".").collect();
             format!("flags/{}", flag_name.first().unwrap())
         }).collect();
+
+        let context: HashMap<String, Value> = _evaluation_context
+            .iter()
+            .map(|(key, value)| (key.clone(), value.clone().convert()))
+            .collect();
 
         let sdk = SDK::builder().id(SDK_ID).version(get_sdk_version()).build();
 

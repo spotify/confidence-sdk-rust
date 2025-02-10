@@ -12,7 +12,7 @@ let api_config = APIConfig {
         region: Region::Global,
     };
     let mut context = HashMap::new();
-    context.insert("targeting_key".to_string(), ConfidenceValue::String("Sample".to_string()));
+    context.insert("visitor_id".to_string(), ConfidenceValue::String("dennis".to_string()));
 
     let confidence = Confidence::new(api_config).with_context(context);
 

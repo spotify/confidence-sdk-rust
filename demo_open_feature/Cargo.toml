@@ -13,4 +13,5 @@ path = "../confidence"
 [dependencies]
 tokio = {version = "1.33.0", features = ["full"] }
 async-trait = "0.1.74"
-open-feature = "0.2.3"
+open-feature = "0.2.5"
+rand = "0.8"

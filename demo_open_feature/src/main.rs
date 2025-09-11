@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use open_feature::{EvaluationContext, OpenFeature};
-
 use spotify_confidence_sdk::{APIConfig, Confidence, Region};
 use spotify_confidence_openfeature_provider::ConfidenceProvider;
 
@@ -14,18 +12,28 @@ let api_config = APIConfig {
     let confidence = Confidence::new(api_config);
     let provider = ConfidenceProvider::new(confidence);
 
-    let context = EvaluationContext {
-        targeting_key: Some("TARGETING_KEY".to_string()),
-        custom_fields: HashMap::new()
-    };
-
     let mut api = OpenFeature::singleton_mut().await;
 
     api.set_provider(provider).await;
 
-    // wrong type, should return error
-    let details_string = api
-        .create_client().get_string_details("hawkflag.message", Some(&context), None).await;
+    let client = api.create_client();
 
-    println!("details string -> {:?}", details_string.unwrap().value);
+    let random_number = rand::random::<u64>();
+    let visitor_id = random_number.to_string();
+
+    let context = EvaluationContext::default()
+        .with_custom_field("visitor_id", visitor_id)
+        .with_custom_field("user_id", "1111111111");
+    let details_string = client.get_string_details("hawkflag.message", Some(&context), None).await;
+    
+    match details_string {
+        Ok(details) => {
+            println!("Successfully retrieved flag value: {:?}", details.value);
+            println!("Flag details: {:?}", details);
+        }
+        Err(error) => {
+            println!("Error retrieving flag: {:?}", error);
+            println!("This is expected if the flag 'hawkflag.message' doesn't exist in your Confidence project");
+        }
+    }
 }

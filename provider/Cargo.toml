@@ -18,7 +18,7 @@ path = "../confidence"
 version = "0.1.1"
 
 [dependencies]
-open-feature = "0.2.3"
+open-feature = "0.2.5"
 async-trait = "0.1.74"
 typed-builder = "0.18.2"
 mockall = "0.12.0"

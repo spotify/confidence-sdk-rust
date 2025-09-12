@@ -1,7 +1,7 @@
 [package]
 name = "spotify_confidence_openfeature_provider"
 # x-release-please-start-version
-version = "0.1.3"
+version = "0.1.4"
 # x-release-please-end
 edition = "2021"
 description = "Openfeature provider for the Confidence SDK for Rust"

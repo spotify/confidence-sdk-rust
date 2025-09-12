@@ -25,9 +25,9 @@ impl ConfidenceResolver {
         flags: Vec<String>,
         _evaluation_context: &HashMap<String, ConfidenceValue>,
     ) -> Result<NetworkResolvedFlags, ResolveError> {
-        let flags: Vec<String> = flags.into_iter().map(|flag| {
+        let flags: Vec<String> = flags.into_iter().filter_map(|flag| {
             let flag_name: Vec<&str> = flag.split(".").collect();
-            format!("flags/{}", flag_name.first().unwrap())
+            flag_name.first().map(|name| format!("flags/{}", name))
         }).collect();
 
         let context: HashMap<String, Value> = _evaluation_context
@@ -45,8 +45,10 @@ impl ConfidenceResolver {
         .flags(flags)
         .build();
 
-        let body =
-            serde_json::to_string(resolve_request).unwrap();
+        let body = match serde_json::to_string(resolve_request) {
+            Ok(json) => json,
+            Err(_) => return Err(ResolveError::SerializationError),
+        };
 
         let client = reqwest::Client::new();
         let response = client

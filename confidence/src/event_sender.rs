@@ -51,7 +51,13 @@ async fn send_event(client_secret: String, _name: String, _message: HashMap<Stri
         .build();
 
     let body =
-        serde_json::to_string(req).unwrap();
+        match serde_json::to_string(req) {
+            Ok(json) => json,
+            Err(e) => {
+                eprintln!("Failed to serialize event request: {:?}", e);
+                return;
+            }
+        };
     let client = reqwest::Client::new();
     let response = client
         .post("https://events.confidence.dev/v1/events:publish")

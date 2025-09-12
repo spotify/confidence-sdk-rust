@@ -20,6 +20,7 @@ pub struct APIConfig {
 
 #[allow(unused_variables)]
 #[derive(Clone)]
+#[derive(Debug, PartialEq)]
 pub enum Region {
     US,
     EU,

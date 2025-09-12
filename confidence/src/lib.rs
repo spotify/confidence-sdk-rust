@@ -78,11 +78,26 @@ impl Confidence {
             .fetch_resolved_flags(_flag_key, evaluation_context)
             .await;
 
-        let resolved_flags = resolved_flags_result.unwrap()
-            .flags;
+        let resolved_flags = match resolved_flags_result {
+            Ok(result) => result.flags,
+            Err(e) => {
+                return Err(EvaluationError::builder()
+                    .message(&format!("Failed to fetch resolved flags: {:?}", e))
+                    .code(EvaluationErrorCode::FlagNotFound)
+                    .build());
+            }
+        };
 
         let flag_segments: Vec<&str> = _flag_key.split(".").collect();
-        let flag_name = format!("flags/{}", flag_segments.first().unwrap());
+        let flag_name = match flag_segments.first() {
+            Some(name) => format!("flags/{}", name),
+            None => {
+                return Err(EvaluationError::builder()
+                    .message("Invalid flag key format")
+                    .code(EvaluationErrorCode::FlagNotFound)
+                    .build());
+            }
+        };
         let property_path = flag_segments[1..].to_vec();
 
         if resolved_flags.len() == 0 {
@@ -143,15 +158,17 @@ impl Confidence {
         &self,
         _flag_key: &str,
         default_value: T) -> Result<EvaluationDetails<T>, EvaluationError> {
-        let value = self
+        let value = match self
             .resolve_value(_flag_key, &self.context)
-            .await
-            .unwrap();
+            .await {
+            Ok(val) => val,
+            Err(e) => return Err(e),
+        };
 
         if let Some(int_value) = value.value.as_type(&default_value) {
             Ok(EvaluationDetails::builder()
-            .reason(value.reason.unwrap())
-            .variant(value.variant.unwrap())
+            .reason(value.reason.unwrap_or(EvaluationReason::Default))
+            .variant(value.variant.unwrap_or("unknown".to_string()))
             .value(int_value)
             .build())
         } else {
@@ -164,3 +181,6 @@ impl Confidence {
     }
 
 }
+
+#[cfg(test)]
+mod simple_error_tests;

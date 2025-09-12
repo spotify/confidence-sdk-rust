@@ -210,4 +210,181 @@ mod tests {
         let network_flags: NetworkResolvedFlags = serde_json::from_str(&json_data).unwrap();
         return Ok(network_flags.into());
     }
+
+    // Error handling tests for the new robust error handling
+    #[tokio::test]
+    async fn test_resolve_value_network_error() {
+        let config = APIConfig {
+            api_key: "test_key".to_string(),
+            region: crate::Region::Global,
+        };
+        let mut mock_resolver = MockNetworkFlagResolver::new();
+
+        // Mock a network error
+        mock_resolver.expect_resolve().returning(|_, _, _| {
+            Box::pin(async move { 
+                Err(ResolveError::NetworkError)
+            })
+        });
+
+        let confidence = crate::Confidence::builder()
+            .api_config(config)
+            .resolver(Arc::new(mock_resolver))
+            .build();
+
+        let result = confidence.resolve_value("test.flag", &HashMap::new()).await;
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(error.code, crate::evaluation_error::EvaluationErrorCode::FlagNotFound);
+        assert!(error.message.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_resolve_value_serialization_error() {
+        let config = APIConfig {
+            api_key: "test_key".to_string(),
+            region: crate::Region::Global,
+        };
+        let mut mock_resolver = MockNetworkFlagResolver::new();
+
+        // Mock a serialization error
+        mock_resolver.expect_resolve().returning(|_, _, _| {
+            Box::pin(async move { 
+                Err(ResolveError::SerializationError)
+            })
+        });
+
+        let confidence = crate::Confidence::builder()
+            .api_config(config)
+            .resolver(Arc::new(mock_resolver))
+            .build();
+
+        let result = confidence.resolve_value("test.flag", &HashMap::new()).await;
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(error.code, crate::evaluation_error::EvaluationErrorCode::FlagNotFound);
+    }
+
+    #[tokio::test]
+    async fn test_resolve_value_invalid_flag_key() {
+        let config = APIConfig {
+            api_key: "test_key".to_string(),
+            region: crate::Region::Global,
+        };
+        let mock_resolver = MockNetworkFlagResolver::new();
+
+        let confidence = crate::Confidence::builder()
+            .api_config(config)
+            .resolver(Arc::new(mock_resolver))
+            .build();
+
+        // Test with empty flag key (should cause split to return empty vec)
+        let result = confidence.resolve_value("", &HashMap::new()).await;
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(error.code, crate::evaluation_error::EvaluationErrorCode::FlagNotFound);
+        assert!(error.message.unwrap().contains("Invalid flag key format"));
+    }
+
+    #[tokio::test]
+    async fn test_get_flag_type_mismatch() {
+        let config = APIConfig {
+            api_key: "test_key".to_string(),
+            region: crate::Region::Global,
+        };
+        let mut mock_resolver = MockNetworkFlagResolver::new();
+
+        // Mock returning a string value
+        mock_resolver.expect_resolve().returning(|_, _, _| {
+            Box::pin(async move { 
+                let mut resolved_flags = ResolvedFlags::default();
+                resolved_flags.flags.push(ResolvedFlag {
+                    flag: "flags/test".to_string(),
+                    variant: Some("variant1".to_string()),
+                    value: crate::confidence_value::ConfidenceValue::String("hello".to_string()),
+                    reason: Some(crate::details::EvaluationReason::TargetingMatch),
+                });
+                Ok(resolved_flags)
+            })
+        });
+
+        let confidence = crate::Confidence::builder()
+            .api_config(config)
+            .resolver(Arc::new(mock_resolver))
+            .build();
+
+        // Try to get string value as integer (should cause type mismatch)
+        let result: Result<crate::details::EvaluationDetails<i64>, _> = confidence.get_flag("test.flag", 42i64).await;
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(error.code, crate::evaluation_error::EvaluationErrorCode::TypeMismatch);
+        assert!(error.message.unwrap().contains("schema type is different for test.flag"));
+    }
+
+    #[tokio::test]
+    async fn test_get_flag_propagates_resolve_error() {
+        let config = APIConfig {
+            api_key: "test_key".to_string(),
+            region: crate::Region::Global,
+        };
+        let mut mock_resolver = MockNetworkFlagResolver::new();
+
+        // Mock a network error that should propagate through get_flag
+        mock_resolver.expect_resolve().returning(|_, _, _| {
+            Box::pin(async move { 
+                Err(ResolveError::NetworkError)
+            })
+        });
+
+        let confidence = crate::Confidence::builder()
+            .api_config(config)
+            .resolver(Arc::new(mock_resolver))
+            .build();
+
+        let result: Result<crate::details::EvaluationDetails<String>, _> = confidence.get_flag("test.flag", "default".to_string()).await;
+        
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(error.code, crate::evaluation_error::EvaluationErrorCode::FlagNotFound);
+    }
+
+    #[tokio::test]
+    async fn test_get_flag_success_with_fallback_values() {
+        let config = APIConfig {
+            api_key: "test_key".to_string(),
+            region: crate::Region::Global,
+        };
+        let mut mock_resolver = MockNetworkFlagResolver::new();
+
+        // Mock returning a flag with missing optional fields
+        mock_resolver.expect_resolve().returning(|_, _, _| {
+            Box::pin(async move { 
+                let mut resolved_flags = ResolvedFlags::default();
+                resolved_flags.flags.push(ResolvedFlag {
+                    flag: "flags/test".to_string(),
+                    variant: None, // Missing variant - should use fallback
+                    value: crate::confidence_value::ConfidenceValue::String("hello".to_string()),
+                    reason: None, // Missing reason - should use fallback
+                });
+                Ok(resolved_flags)
+            })
+        });
+
+        let confidence = crate::Confidence::builder()
+            .api_config(config)
+            .resolver(Arc::new(mock_resolver))
+            .build();
+
+        let result: Result<crate::details::EvaluationDetails<String>, _> = confidence.get_flag("test.flag", "default".to_string()).await;
+        
+        assert!(result.is_ok());
+        let details = result.unwrap();
+        assert_eq!(details.value, "hello");
+        assert_eq!(details.reason, Some(crate::details::EvaluationReason::Static)); // Fallback reason
+        assert_eq!(details.variant, Some("unknown".to_string())); // Fallback variant
+    }
 }

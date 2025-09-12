@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_with_context() {
-        let mut confidence = Confidence::builder()
+        let confidence = Confidence::builder()
             .api_config(APIConfig { api_key: "X".to_string(), region: Region::EU })
             .resolver(Arc::new(crate::ConfidenceResolver::default()))
             .build();

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/spotify/confidence-sdk-rust/compare/0.1.4...0.1.5) (2026-01-28)
+
+
+### 📚 Documentation
+
+* add contribution guidelines ([#30](https://github.com/spotify/confidence-sdk-rust/issues/30)) ([9aa22cf](https://github.com/spotify/confidence-sdk-rust/commit/9aa22cff62116128686f42f6aae311c745ee0a8b))
+
 ## [0.1.4](https://github.com/spotify/confidence-sdk-rust/compare/0.1.3...0.1.4) (2025-09-12)
 
 

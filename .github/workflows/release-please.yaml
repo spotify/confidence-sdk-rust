@@ -10,7 +10,7 @@ jobs:
 
     # Release-please creates a PR that tracks all changes
         steps: 
-        - uses: google-github-actions/release-please-action@v3
+        - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 # v3
           id: release
           with:
             release-type: simple
@@ -32,14 +32,10 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 25
         steps:
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
           - name: Install stable toolchain
-            uses: actions-rs/toolchain@v1
-            with:
-              profile: minimal
-              toolchain: stable
-              override: true
+            uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
 
           - name: cargo login
             run: cargo login ${{ secrets.PUBLISH_CRATE_TOKEN }}

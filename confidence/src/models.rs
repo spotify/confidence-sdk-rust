@@ -81,7 +81,18 @@ impl FlagValueConversion<StructValue> for Option<Value> {
                     if let Value::Object(value_map) = value {
                         let new_map: HashMap<String, ConfidenceValue> = value_map
                             .into_iter()
-                            .map(|(key, value)| {
+                            .filter_map(|(key, value)| {
+                                // A null property carries no value: the variant doesn't define one,
+                                // so resolution must fall back to the call-site default (the same
+                                // behaviour as a missing property, and what every other Confidence
+                                // SDK does). Omitting the field here makes the downstream path
+                                // lookup miss, which surfaces the default. Without this, the
+                                // scalar arms below coerce null to the type's zero value via
+                                // `unwrap_or_default()` (false / 0 / 0.0 / ""), silently replacing
+                                // the call-site default.
+                                if value.is_null() {
+                                    return None;
+                                }
                                 let converted_value = match schema[&key].clone() {
                                     SchemaType::BoolType => ConfidenceValue::Bool(
                                         value.as_bool().unwrap_or_default(),
@@ -103,7 +114,7 @@ impl FlagValueConversion<StructValue> for Option<Value> {
                                         )))
                                     }
                                 };
-                                (key, converted_value)
+                                Some((key, converted_value))
                             })
                             .collect();
                         StructValue { fields: new_map }
@@ -192,5 +203,91 @@ pub struct ResolveRequest {
 impl From<reqwest::Error> for ResolveError {
     fn from(error: reqwest::Error) -> ResolveError {
         ResolveError::NetworkError(error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn resolved_flags_with_nulls() -> ResolvedFlags {
+        let json = r#"
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/test-flag",
+              "variant": "flags/test-flag/variants/treatment",
+              "value": {
+                "boolean-key": null,
+                "string-key": "served",
+                "struct-key": {
+                  "nested-null-key": null,
+                  "nested-boolean-key": true
+                }
+              },
+              "flagSchema": {
+                "schema": {
+                  "boolean-key": { "boolSchema": {} },
+                  "string-key": { "stringSchema": {} },
+                  "struct-key": {
+                    "structSchema": {
+                      "schema": {
+                        "nested-null-key": { "boolSchema": {} },
+                        "nested-boolean-key": { "boolSchema": {} }
+                      }
+                    }
+                  }
+                }
+              },
+              "reason": "RESOLVE_REASON_MATCH"
+            }
+          ],
+          "resolveToken": ""
+        }
+        "#;
+
+        let network: NetworkResolvedFlags = serde_json::from_str(json).unwrap();
+        network.into()
+    }
+
+    #[test]
+    fn null_valued_property_is_omitted_so_resolution_falls_back_to_default() {
+        let resolved = resolved_flags_with_nulls();
+        let fields = &resolved.flags[0].value.fields;
+
+        // A null property must be absent so the path lookup misses and the call-site
+        // default is served — not coerced to the type's zero value (false here).
+        assert!(
+            !fields.contains_key("boolean-key"),
+            "null property should be omitted, found {:?}",
+            fields.get("boolean-key")
+        );
+
+        // Non-null siblings are untouched.
+        assert_eq!(
+            fields.get("string-key"),
+            Some(&ConfidenceValue::String("served".to_string()))
+        );
+    }
+
+    #[test]
+    fn null_valued_nested_property_is_omitted() {
+        let resolved = resolved_flags_with_nulls();
+        let nested = resolved.flags[0]
+            .value
+            .fields
+            .get("struct-key")
+            .and_then(|v| v.as_struct())
+            .expect("struct-key should be present");
+
+        assert!(
+            !nested.fields.contains_key("nested-null-key"),
+            "null nested property should be omitted, found {:?}",
+            nested.fields.get("nested-null-key")
+        );
+        assert_eq!(
+            nested.fields.get("nested-boolean-key"),
+            Some(&ConfidenceValue::Bool(true))
+        );
     }
 }

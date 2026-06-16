@@ -1,11 +1,16 @@
 # Rust Confidence SDK
 
+> **💡 Looking for better performance?** Check out the [Confidence Local Resolver Provider for Rust](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/rust), which evaluates flags locally for increased resilience and lower latency.
+
 This repo contains the [Confidence](https://confidence.spotify.com/) Rust SDK and the Confidence OpenFeature provider. We recommend using the OpenFeature Rust SDK to access Confidence feature flags. Use it to consume feature flags from Confidence.
 
 To learn more about the basic concepts (flags, targeting key, evaluation contexts), the [OpenFeature reference documentation](https://openfeature.dev/docs/reference/intro/) can be a useful resource.
 
 
 ## Usage
+
+> [!TIP]
+> For better resilience and lower latency, see the [Confidence Local Resolver Provider](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/rust) which resolves flags locally without per-evaluation network calls.
 
 ### Instantiating the ConfidenceProvider and connecting it to OpenFeature
 

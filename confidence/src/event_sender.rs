@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -10,27 +11,49 @@ use crate::contextual_confidence::Contextual;
 use crate::conversion_trait::ToSerdeValueConverter;
 use crate::models::SDK;
 
+#[async_trait::async_trait]
 pub trait EventSender {
     fn track(&self, name: &str, message: HashMap<String, ConfidenceValue>);
+    async fn async_track(&self, name: &str, message: HashMap<String, ConfidenceValue>);
 }
 
+#[async_trait::async_trait]
 impl EventSender for Confidence {
     fn track(&self, name: &str, message: HashMap<String, ConfidenceValue>) {
-        let payload = self.get_context();
-
-        let mut context_map: HashMap<String, Value> = payload
-            .iter()
-            .map(|(key, value)| (key.clone(), value.clone().convert()))
-            .collect();
-        let message_map: HashMap<String, Value> = message
-            .iter()
-            .map(|(key, value)| (key.clone(), value.clone().convert()))
-            .collect();
-        for (key, value) in message_map {
-            context_map.insert(key, value);
-        }
-       tokio::spawn(send_event(self.api_config.api_key.clone(), name.to_string(), context_map));
+        let context = self.context.clone();
+        let api_config = self.api_config.clone();
+        let event_name = name.to_string().clone();
+        tokio::spawn(async move {
+            send_event(
+                api_config.api_key,
+                event_name,
+                merge_context(context, message)
+            ).await;
+        });
     }
+
+    async fn async_track(&self, name: &str, message: HashMap<String, ConfidenceValue>) {
+        send_event(
+            self.api_config.api_key.clone(),
+            name.to_string(),
+            merge_context(self.context.clone(), message)
+        ).await;
+    }
+}
+
+
+fn merge_context(context: HashMap<String, ConfidenceValue>, message: HashMap<String, ConfidenceValue>) -> HashMap<String, Value> {
+    let mut context_map: HashMap<String, Value> = context.iter()
+        .map(|(key, value)| (key.clone(), value.clone().convert()))
+        .collect();
+    let message_map: HashMap<String, Value> = message
+        .iter()
+        .map(|(key, value)| (key.clone(), value.clone().convert()))
+        .collect();
+    for (key, value) in message_map {
+        context_map.insert(key, value);
+    }
+    context_map
 }
 
 async fn send_event(client_secret: String, _name: String, _message: HashMap<String, Value>) {
@@ -63,9 +86,10 @@ async fn send_event(client_secret: String, _name: String, _message: HashMap<Stri
         .post("https://events.confidence.dev/v1/events:publish")
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
-        .body(body)
+        .body(body.clone())
         .send()
         .await;
+
     match response {
         Ok(success) => {
             match success.text().await {
@@ -75,8 +99,8 @@ async fn send_event(client_secret: String, _name: String, _message: HashMap<Stri
                 Err(err) => println!("ERROR ->> {}", err)
             }
         }
-        Err(_) => {
-
+        Err(error) => {
+            println!("ERROR response ->> {:?}", error)
         }
     }
 }

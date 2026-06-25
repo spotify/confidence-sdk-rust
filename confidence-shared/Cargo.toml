@@ -3,17 +3,19 @@ name = "confidence-shared"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies.confidence]
 path = "../confidence"
+
+[lib]
+crate-type = ["cdylib"]
+name = "confidence_shared"
 
 [dependencies]
 tokio = { version = "1.33.0", features = ["rt-multi-thread"] }
 async-trait = "0.1.74"
 uniffi = {version = "0.27.2", features = ["cli", "tokio"] }
 futures = "0.3.29"
+lazy_static = "1.4.0"
 
 [profile.release]
 debug = false
@@ -25,8 +27,7 @@ panic = 'abort'
 
 [build-dependencies]
 uniffi = {version = "0.27.2", features = ["build"] }
+uniffi_macros = "0.27.2"
 
-[[bin]]
-# This can be whatever name makes sense for your project, but the rest of this tutorial assumes uniffi-bindgen.
-name = "uniffi-bindgen"
-path = "src/uniffi-bindgen.rs"
+[package.metadata.maturin]
+name = "confidence_shared._internal"

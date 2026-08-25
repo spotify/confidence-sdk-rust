@@ -26,6 +26,7 @@ mod tests {
         let config = APIConfig {
             api_key: "".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 
@@ -217,6 +218,7 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 
@@ -245,6 +247,7 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 
@@ -272,6 +275,7 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mock_resolver = MockNetworkFlagResolver::new();
 
@@ -294,6 +298,7 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 
@@ -330,6 +335,7 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 
@@ -357,6 +363,7 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: crate::Region::Global,
+            resolve_base_url: None,
         };
         let mut mock_resolver = MockNetworkFlagResolver::new();
 

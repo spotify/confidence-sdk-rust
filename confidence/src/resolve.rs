@@ -9,7 +9,6 @@ use crate::models::NetworkResolvedFlags;
 use crate::models::ResolveError;
 use crate::models::ResolveRequest;
 use crate::models::ResolvedFlags;
-use crate::models::APIURL;
 use crate::models::SDK;
 use crate::{get_sdk_version, SDK_ID};
 use crate::conversion_trait::ToSerdeValueConverter;
@@ -18,7 +17,6 @@ use crate::conversion_trait::ToSerdeValueConverter;
 pub struct ConfidenceResolver;
 
 impl ConfidenceResolver {
-
     async fn make_request(
         &self,
         config: &APIConfig,
@@ -52,7 +50,7 @@ impl ConfidenceResolver {
 
         let client = reqwest::Client::new();
         let response = client
-            .post(format!("{}/v1/flags:resolve", config.region.url()))
+            .post(self.flags_resolve_url(config))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
             .body(body)
@@ -73,6 +71,10 @@ impl ConfidenceResolver {
             }
             Err(err) => Err(ResolveError::NetworkError(err)),
         }
+    }
+
+    fn flags_resolve_url(&self, config: &APIConfig) -> String {
+        format!("{}/v1/flags:resolve", config.resolver_base_url())
     }
 }
 
@@ -97,5 +99,26 @@ impl NetworkFlagResolver for ConfidenceResolver {
     ) -> Result<ResolvedFlags, ResolveError> {
         let network_response = self.make_request(config, flags, evaluation_context).await?;
         Ok(network_response.into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ConfidenceResolver;
+    use crate::{APIConfig, Region};
+
+    #[test]
+    fn custom_resolve_base_url_trims_trailing_slashes() {
+        let config = APIConfig {
+            api_key: "secret".to_string(),
+            region: Region::Global,
+            resolve_base_url: Some("https://resolver.example.com///".to_string()),
+        };
+        let resolver = ConfidenceResolver::default();
+
+        assert_eq!(
+            resolver.flags_resolve_url(&config),
+            "https://resolver.example.com/v1/flags:resolve"
+        );
     }
 }

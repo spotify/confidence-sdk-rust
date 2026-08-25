@@ -30,6 +30,7 @@ mod tests {
         let api_config = APIConfig {
             api_key: "".to_string(),
             region: Region::Global,
+            resolve_base_url: None,
         };
 
         let mut mock_resolver = MockNetworkFlagResolver::new();

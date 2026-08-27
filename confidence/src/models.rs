@@ -16,6 +16,16 @@ pub enum ResolveError {
 pub struct APIConfig {
     pub api_key: String,
     pub region: Region,
+    pub resolve_base_url: Option<String>,
+}
+
+impl APIConfig {
+    pub fn resolver_base_url(&self) -> String {
+        self.resolve_base_url
+            .as_deref()
+            .map(|url| url.trim_end_matches('/').to_string())
+            .unwrap_or_else(|| self.region.url())
+    }
 }
 
 #[allow(unused_variables)]

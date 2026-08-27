@@ -96,9 +96,11 @@ mod tests {
         let config = APIConfig {
             api_key: "test_key".to_string(),
             region: Region::Global,
+            resolve_base_url: None,
         };
         
         assert_eq!(config.api_key, "test_key");
         assert_eq!(config.region, Region::Global);
+        assert_eq!(config.resolve_base_url, None);
     }
 }

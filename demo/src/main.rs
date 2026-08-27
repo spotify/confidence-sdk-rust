@@ -10,6 +10,7 @@ async fn main() {
 let api_config = APIConfig {
         api_key: "API_KEY".to_string(),
         region: Region::Global,
+        resolve_base_url: None,
     };
     let mut context = HashMap::new();
     context.insert("visitor_id".to_string(), ConfidenceValue::String("dennis".to_string()));

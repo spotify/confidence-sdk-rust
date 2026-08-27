@@ -13,6 +13,8 @@ first, we need to setup the api config which contains a `client_secret` and a a 
 let api_config = APIConfig {
 api_key: "API_KEY".to_string(),
 region: Region::Global,
+// optionally, use a custom resolver base URL instead of the hosted resolver services
+resolve_base_url: Some("https://resolver.example.com/".to_string()),
 };
 let confidence = Confidence::new(api_config);
 let provider = ConfidenceProvider::new(confidence);

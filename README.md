@@ -18,10 +18,15 @@ You setup the Confidence Provider once in your app and connect it to OpenFeature
 
 ```rust
 // first, we need to setup the api config which contains a `api_key` and a `region`
-let api_config = APIConfig { api_key: "YOUR_API_KEY".to_string(), region: YOUR_REGION };
+let api_config = APIConfig {
+    api_key: "YOUR_API_KEY".to_string(),
+    region: YOUR_REGION,
+    // optionally, use a custom resolver base URL instead of the hosted resolver services
+    resolve_base_url: Some("https://resolver.example.com/".to_string()),
+};
 
 // we can then create a confidence provider using a confidence instance.
-let confidence = Confidence::new(api_config)
+let confidence = Confidence::new(api_config);
 let provider = ConfidenceProvider::new(confidence);
 
 let mut api = OpenFeature::singleton_mut().await;

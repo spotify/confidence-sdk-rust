@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/spotify/confidence-sdk-rust/compare/0.1.4...v0.2.0) (2026-08-27)
+
+
+### Features
+
+* support custom resolver base URL ([#37](https://github.com/spotify/confidence-sdk-rust/issues/37)) ([318df42](https://github.com/spotify/confidence-sdk-rust/commit/318df4237e626f4a06365b262ae90cb6eb8e37c2))
+
 ## [0.1.4](https://github.com/spotify/confidence-sdk-rust/compare/0.1.3...0.1.4) (2025-09-12)
 
 

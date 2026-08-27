@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/spotify/confidence-sdk-rust/compare/v0.2.0...0.2.1) (2026-08-27)
+
+
+### 🐛 Bug Fixes
+
+* restore manifest release version updates ([#38](https://github.com/spotify/confidence-sdk-rust/issues/38)) ([4f00c84](https://github.com/spotify/confidence-sdk-rust/commit/4f00c840e672c4d0ffcf7339383e73402d5f4945))
+
 ## [0.2.0](https://github.com/spotify/confidence-sdk-rust/compare/0.1.4...v0.2.0) (2026-08-27)
 
 

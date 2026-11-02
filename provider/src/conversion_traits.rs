@@ -42,6 +42,7 @@ impl ToOFValueConverter for ConfidenceValue {
             ConfidenceValue::String(value) => {
                 open_feature::Value::String(value)
             }
+            // List-valued flags are deprecated (still supported); see `ConfidenceValue::Array`.
             ConfidenceValue::Array(value) => {
                 let list = value
                     .iter()

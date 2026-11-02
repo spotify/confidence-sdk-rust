@@ -68,3 +68,10 @@ we expect an `MismatchType` error from the `EvaluationError`.
 let details_string = confidence.get_flag("hawkflag.message", "default".to_string()).await;
 println!("details string -> {:?}", details_string);
 ```
+
+### Deprecation: list/array flag values
+
+Using lists (arrays) as flag values, including list fields in a flag schema, is deprecated.
+Such flags still resolve, and the provider still maps them to `open_feature::Value::Array`,
+but new flags should use other value types (for example, structs). No removal date has been set.
+This applies to flag values only. Lists in evaluation context and event data are still supported.

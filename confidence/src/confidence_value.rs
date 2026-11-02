@@ -10,6 +10,12 @@ pub enum ConfidenceValue {
   Int(i64),
   Float(f64),
   String(String),
+  /// A list of values.
+  ///
+  /// Using lists as **flag values** (list/array flag schemas) is deprecated.
+  /// Runtime support is unchanged and lists still resolve. This variant is
+  /// not deprecated: it is also used for evaluation context and event data,
+  /// which remain fully supported.
   Array(Vec<ConfidenceValue>),
   Struct(StructValue),
 }
@@ -83,6 +89,8 @@ impl ConfidenceValue {
   }
 
   /// Try to convert `self` to vector.
+  ///
+  /// Reading list-valued flags is deprecated; see [`ConfidenceValue::Array`].
   pub fn as_array(&self) -> Option<&Vec<ConfidenceValue>> {
     match self {
       Self::Array(value) => Some(value),
